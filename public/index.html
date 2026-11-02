@@ -65,6 +65,8 @@
   .memo p { margin: 6px 0 4px; white-space: pre-wrap; overflow-wrap: anywhere; }
   .memo footer { display: flex; justify-content: flex-end; }
   .memo .hint { text-align: right; }
+  .dateRow { align-items: center; }
+  .dateRow label { flex: none; }
   .empty { text-align: center; color: var(--muted); padding: 32px 0; }
 
   dialog {
@@ -86,6 +88,10 @@
     <div class="row">
       <input id="name" placeholder="이름" maxlength="20" required aria-label="이름">
       <input id="pw" type="password" placeholder="수정 비밀번호 (4자 이상)" minlength="4" required aria-label="수정 비밀번호">
+    </div>
+    <div class="row dateRow">
+      <label for="created" class="hint">작성일</label>
+      <input id="created" type="datetime-local" required>
     </div>
     <textarea id="content" placeholder="메모를 남겨 보세요" maxlength="1000" required aria-label="내용"></textarea>
     <div class="bar">
@@ -160,7 +166,7 @@ function render() {
     del.onclick = () => openDlg(n, 'delete');
     foot.append(edit, del);
     el.append(head, p);
-    if (n.updatedAt !== n.createdAt) {
+    if (n.edited || n.updatedAt > n.createdAt) {
       const u = document.createElement('div');
       u.className = 'hint';
       u.textContent = '수정 ' + fmt(n.updatedAt);
@@ -183,8 +189,12 @@ $('form').addEventListener('submit', async (e) => {
   $('formErr').textContent = '';
   $('submit').disabled = true;
   try {
-    await api('/api/notes', 'POST', { name: $('name').value, password: $('pw').value, content: $('content').value });
+    await api('/api/notes', 'POST', {
+      name: $('name').value, password: $('pw').value, content: $('content').value,
+      createdAt: new Date($('created').value).getTime(),
+    });
     $('pw').value = ''; $('content').value = ''; $('cnt').textContent = '0';
+    setNow();
     try { localStorage.setItem('memo-name', $('name').value); } catch {}
     await load();
   } catch (err) { $('formErr').textContent = err.message; }
@@ -216,6 +226,11 @@ $('dlgOk').onclick = async () => {
   $('dlgOk').disabled = false;
 };
 
+function setNow() {
+  const d = new Date();
+  $('created').value = new Date(d - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+}
+setNow();
 try { $('name').value = localStorage.getItem('memo-name') || ''; } catch {}
 load();
 </script>

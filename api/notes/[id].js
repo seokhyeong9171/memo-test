@@ -15,7 +15,7 @@ export default async function handler(req, res) {
     if (req.method === 'PUT') {
       const err = validate({ name: name ?? note.name, content });
       if (err) return res.status(400).json({ error: err });
-      const next = { ...note, name: (name ?? note.name).trim(), content: content.trim(), updatedAt: Date.now() };
+      const next = { ...note, name: (name ?? note.name).trim(), content: content.trim(), updatedAt: Date.now(), edited: true };
       await redis.hset(KEY, { [id]: JSON.stringify(next) });
       return res.status(200).json(pub(next));
     }
